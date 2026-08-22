@@ -45,6 +45,14 @@ def delete(path_to_delete):
     if not path.exists():
         print("file or folder does not exist.")
         return
+    
+    confirmation = input(
+        f"Are you sure want to delete {path.name}? y/n: "
+          )
+    
+    if confirmation.lower() != "y":
+        print("Deletion cancelled!")
+        return
     if path.is_file():
         path.unlink()
         print(f"file deleted:{path}")
