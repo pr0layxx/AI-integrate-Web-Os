@@ -1,0 +1,13 @@
+
+{
+  "access_mode": "full_access",
+  "excluded_paths": [],
+  "operations": {
+    "read": true,
+    "search": true,
+    "create": true,
+    "modify": true,
+    "delete": true,
+    "launch_app": true
+  }
+}
