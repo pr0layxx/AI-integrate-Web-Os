@@ -1,10 +1,8 @@
-
 import json
 import os
 from pathlib import Path
 
 from fastapi import HTTPException
-
 
 # Configuration location
 BASE_DIR = Path(__file__).resolve().parent
@@ -26,15 +24,9 @@ class PermissionManager:
             with CONFIG_FILE.open("r", encoding="utf-8") as file:
                 config = json.load(file)
         except (json.JSONDecodeError, OSError) as error:
-            raise RuntimeError(
-                "Unable to load permission configuration."
-            ) from error
+            raise RuntimeError("Unable to load permission configuration.") from error
 
-        required_keys = {
-            "access_mode",
-            "excluded_paths",
-            "operations"
-        }
+        required_keys = {"access_mode", "excluded_paths", "operations"}
 
         if not required_keys.issubset(config):
             raise RuntimeError("Invalid permission configuration.")
@@ -44,6 +36,11 @@ class PermissionManager:
 
         if not isinstance(config["excluded_paths"], list):
             raise RuntimeError("excluded_paths must be a list.")
+
+        if not all(
+            isinstance(path, str) and path.strip() for path in config["excluded_paths"]
+        ):
+            raise RuntimeError("excluded_paths must contain only non-empty strings.")
 
         if not isinstance(config["operations"], dict):
             raise RuntimeError("operations must be an object.")
@@ -75,36 +72,27 @@ class PermissionManager:
         except (OSError, RuntimeError):
             raise HTTPException(
                 status_code=403,
-                detail="Unable to verify excluded paths. Access denied."
+                detail="Unable to verify excluded paths. Access denied.",
             )
-            
 
     def validate_path(self, user_path: str) -> Path:
 
         if not isinstance(user_path, str) or not user_path.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="Path cannot be empty."
-            )
+            raise HTTPException(status_code=400, detail="Path cannot be empty.")
 
         try:
             target = Path(user_path).resolve(strict=True)
         except (OSError, RuntimeError):
             raise HTTPException(
-                status_code=403,
-                detail="Path cannot be safely resolved."
+                status_code=403, detail="Path cannot be safely resolved."
             )
 
         if not target.exists():
-            raise HTTPException(
-                status_code=404,
-                detail="Path does not exist."
-            )
+            raise HTTPException(status_code=404, detail="Path does not exist.")
 
         if self.is_excluded(target):
             raise HTTPException(
-                status_code=403,
-                detail="Access to this location is blocked."
+                status_code=403, detail="Access to this location is blocked."
             )
 
         return target
@@ -115,8 +103,7 @@ class PermissionManager:
 
         if allowed is not True:
             raise HTTPException(
-                status_code=403,
-                detail=f"Operation '{operation}' is not permitted."
+                status_code=403, detail=f"Operation '{operation}' is not permitted."
             )
 
     def authorize(self, user_path: str, operation: str) -> Path:
